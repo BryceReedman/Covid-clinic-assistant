@@ -1,0 +1,63 @@
+plugins {
+    id 'groovy'
+    id 'java'
+    id 'application'
+    id 'org.openjfx.javafxplugin' version '0.0.10'
+
+}
+
+javafx {
+    version = '16'
+    modules = [ 'javafx.controls', 'javafx.fxml' ]
+}
+
+group 'org.example'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+compileTestJava {
+    // To enable argument names in reporting and debugging
+    options.compilerArgs += '-parameters'
+}
+
+ext.junitPlatformVersion = '1.7.2'
+ext.junitJupiterVersion = '5.7.2'
+ext.jqwikVersion = '1.5.4'
+
+test {
+    useJUnitPlatform {
+        includeEngines 'jqwik','junit-jupiter'
+
+        // Or include several Junit engines if you use them
+        // includeEngines 'jqwik', 'junit-jupiter', 'junit-vintage'
+
+        // includeTags 'fast', 'medium'
+        // excludeTags 'slow'
+    }
+
+    include '**/*Properties.class'
+    include '**/*Test.class'
+    include '**/*Tests.class'
+}
+
+dependencies {
+    testImplementation "net.jqwik:jqwik:${jqwikVersion}"
+
+    implementation 'org.jetbrains:annotations:20.1.0'
+    testImplementation "org.junit.jupiter:junit-jupiter-api:${junitJupiterVersion}"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${junitJupiterVersion}"
+
+//Google
+    implementation 'com.google.api-client:google-api-client:latest.release'
+    implementation 'com.google.oauth-client:google-oauth-client-jetty:latest.release'
+    implementation 'com.google.apis:google-api-services-sheets:latest.release'
+    implementation 'com.google.apis:google-api-services-drive:latest.release'
+//selenium
+    implementation 'com.codeborne:selenide:5.24.2'
+}
+
+mainClassName = 'Main'
+
