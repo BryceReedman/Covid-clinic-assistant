@@ -166,4 +166,37 @@ public class GoogleHandler {
         return response.getValues();
 
     }
+
+    public static String getSpreadsheetName(int id) {
+        for (File sheet: spreadsheets){
+            if (Integer.parseInt(sheet.getId()) == id)
+                return sheet.getName();
+        }
+        return null;
+    }
+
+    public static int getID(String spreadsheetName) {
+        for (File spreadsheet: spreadsheets){
+            if (spreadsheet.getName().equals(spreadsheetName))
+                return Integer.parseInt(spreadsheet.getId());
+        }
+
+        return 0;
+    }
+
+    public static ArrayList<String> getNamesOfSpreadsheets() {
+        ArrayList<String> spreadsheetNames = new ArrayList<>();
+        for (File spreadsheet: spreadsheets){
+            spreadsheetNames.add(spreadsheet.getName());
+        }
+        return spreadsheetNames;
+    }
+
+    public static ArrayList<String> getSheetNamesOfSpreadsheet(String spreadsheetName) {
+        ArrayList<String> listOfSheets = new ArrayList<>();
+        for (Sheet sheet: sheetsOfSpreadsheet.get(getID(spreadsheetName))){
+            listOfSheets.add(sheet.getProperties().getTitle());
+        }
+        return listOfSheets;
+    }
 }
