@@ -2,13 +2,17 @@ plugins {
     id 'groovy'
     id 'java'
     id 'application'
-    id 'org.openjfx.javafxplugin' version '0.0.10'
+  //  id 'org.openjfx.javafxplugin' version '0.0.10'
+    id 'org.beryx.jlink' version '2.24.1'
 
 }
 
-javafx {
-    version = '16'
-    modules = [ 'javafx.controls', 'javafx.fxml' ]
+
+
+jlink {
+    launcher {
+        name = 'launchfx'
+    }
 }
 
 group 'org.example'
@@ -17,6 +21,7 @@ version '1.0-SNAPSHOT'
 repositories {
     mavenCentral()
 }
+
 
 compileTestJava {
     // To enable argument names in reporting and debugging
@@ -43,6 +48,9 @@ test {
     include '**/*Tests.class'
 }
 
+
+
+
 dependencies {
     testImplementation "net.jqwik:jqwik:${jqwikVersion}"
 
@@ -59,5 +67,5 @@ dependencies {
     implementation 'com.codeborne:selenide:5.24.2'
 }
 
-mainClassName = 'Main'
+mainClassName = 'vaccine.main.Main'
 

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ToolBar?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.text.Text?>
+
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="428.0" prefWidth="658.0" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1" fx:controller="vaccine.main.MainController">
+   <top>
+       <ToolBar prefHeight="40.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+           <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Vaccine: " />
+           <Label fx:id="vaccineSelection" prefHeight="18.0" prefWidth="107.0" text="Select Spreadsheet" />
+           <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Bot Status: " />
+           <Label fx:id="botStatus" prefHeight="18.0" prefWidth="45.0" text="Offline" />
+           <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Completed: " />
+           <Label fx:id="completedCount" prefHeight="18.0" prefWidth="15.0" text="0" />
+           <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Failed: " />
+           <Label fx:id="failedCount" prefHeight="18.0" prefWidth="15.0" text="0" />
+         <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Ready" />
+         <Label fx:id="readyCount" prefHeight="18.0" prefWidth="15.0" text="0" />
+       </ToolBar>
+   </top>
+   <center>
+       <HBox prefHeight="100.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+           <VBox alignment="TOP_CENTER" prefHeight="283.0" prefWidth="263.0">
+               <VBox alignment="CENTER" prefHeight="133.0" prefWidth="214.0">
+                   <HBox alignment="CENTER" prefHeight="28.0" prefWidth="400.0">
+                       <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Spreadsheet Settings" underline="true">
+                           <font>
+                               <Font name="System Bold" size="15.0" />
+                           </font>
+                       </Text>
+                   </HBox>
+                   <ComboBox fx:id="spreadsheetSelection" onAction="#spreadsheetSet" prefWidth="150.0" promptText="spreadsheet" />
+                   <ComboBox fx:id="sheetSelection" onAction="#sheetSet" prefWidth="150.0" promptText="Sheet" />
+                   <HBox alignment="CENTER" prefHeight="26.0" prefWidth="214.0">
+                       <TextField fx:id="rangeTextField" onAction="#enableCheck" prefHeight="0.0" prefWidth="120.0" promptText="Range" />
+                   </HBox>
+                   <HBox alignment="CENTER" prefHeight="30.0" prefWidth="333.0">
+                       <TextField fx:id="DoseReadyColumnName" onAction="#enableCheck" prefHeight="0.0" prefWidth="120.0" promptText="Dose Ready" />
+                   </HBox>
+                   <HBox alignment="CENTER" prefHeight="12.0" prefWidth="333.0" spacing="5.0">
+                       <TextField fx:id="EncounterColumnName" onAction="#enableCheck" prefHeight="0.0" prefWidth="120.0" promptText="Encounter" />
+                   </HBox>
+                   <HBox alignment="CENTER" prefHeight="0.0" prefWidth="333.0" spacing="5.0">
+                       <TextField fx:id="VaccinatedColumnName" onAction="#enableCheck" prefHeight="0.0" prefWidth="120.0" promptText="Vaccinated" />
+                   </HBox>
+                   <HBox alignment="CENTER" prefHeight="0.0" prefWidth="333.0">
+                       <TextField fx:id="AIRColumnName" onAction="#enableCheck" prefHeight="0.0" prefWidth="120.0" promptText="AIR" />
+                   </HBox>
+                   <HBox alignment="CENTER" prefHeight="176.0" prefWidth="287.0" />
+                   <HBox alignment="CENTER" prefHeight="0.0" prefWidth="333.0">
+                       <TextField fx:id="FirstNameColumnName" onAction="#enableCheck" prefHeight="0.0" prefWidth="120.0" promptText="First Name" />
+                   </HBox>
+                   <HBox alignment="CENTER" prefHeight="0.0" prefWidth="333.0">
+                       <TextField fx:id="LastNameColumnName" onAction="#enableCheck" prefHeight="0.0" prefWidth="120.0" promptText="Last Name" />
+                   </HBox>
+                   <HBox alignment="CENTER" prefHeight="0.0" prefWidth="333.0">
+                       <TextField fx:id="DOBColumnName" onAction="#enableCheck" prefHeight="0.0" prefWidth="120.0" promptText="DOB" />
+                   </HBox>
+               </VBox>
+                 <Button fx:id="applyButton" mnemonicParsing="false" onAction="#apply" prefHeight="25.0" prefWidth="82.0" text="Apply" />
+               <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Bot Controls" underline="true">
+                   <font>
+                       <Font name="System Bold" size="15.0" />
+                   </font>
+               </Text>
+               <HBox alignment="CENTER" prefHeight="30.0" prefWidth="400.0">
+                   <Button fx:id="botConnectButton" disable="true" mnemonicParsing="false" onAction="#botConnect" text="Connect" />
+                   <Button fx:id="botStartButton" disable="true" mnemonicParsing="false" onAction="#botStart" text="Start" />
+                   <Button fx:id="botStopButton" disable="true" mnemonicParsing="false" onAction="#botStop" text="Stop" />
+                   <Button fx:id="botStepButton" disable="true" mnemonicParsing="false" onAction="#botStep" text="Step" />
+               </HBox>
+           </VBox>
+           <Separator orientation="VERTICAL" prefHeight="200.0" />
+           <TableView fx:id="table" prefHeight="388.0" prefWidth="527.0">
+            <columns>
+               <TableColumn fx:id="firstNameCol" prefWidth="75.0" text="First Name" />
+               <TableColumn fx:id="lastNameCol" prefWidth="75.0" text="Last Name" />
+               <TableColumn fx:id="DOBCol" prefWidth="82.85711669921875" text="DOB" />
+               <TableColumn fx:id="EncCol" prefWidth="45.71427917480469" text="Enc" />
+               <TableColumn fx:id="DoseCol" prefWidth="41.142822265625" text="Dose" />
+               <TableColumn fx:id="VaccCol" prefWidth="38.85711669921875" text="Vacc." />
+               <TableColumn fx:id="AIRCol" prefWidth="37.71435546875" text="AIR" />
+            </columns></TableView>
+       </HBox>
+   </center>
+</BorderPane>
