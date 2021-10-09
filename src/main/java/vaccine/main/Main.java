@@ -24,7 +24,7 @@ public class Main extends Application {
         //primaryStage.getIcons().add(new Image(getClass().getResourceAsStream("/icon128.png")));
 
         primaryStage.setTitle("Clinic Assistant");
-        primaryStage.setOnCloseRequest(event ->{
+        primaryStage.setOnCloseRequest(event -> {
             GoogleManager.closeThreads();
             AIRAutomation.controller.closeThreads();
 

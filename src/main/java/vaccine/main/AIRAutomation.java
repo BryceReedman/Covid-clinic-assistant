@@ -15,10 +15,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Locale;
+import java.util.*;
 
 import static com.codeborne.selenide.Condition.enabled;
 import static com.codeborne.selenide.Condition.exist;
@@ -29,16 +26,15 @@ import static org.openqa.selenium.Keys.ENTER;
 public class AIRAutomation {
 
 
-    final static int lagBehindPatients = 0;
+    final static int lagBehindPatients = 5;
     final static int waitTimeInMinutes = 20;
     private static final Date date = new Date();
     private static final SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yy");
     private static final String str = formatter.format(date);
-    private static final ArrayList<ArrayList<String>> vaccinatedList = new ArrayList<ArrayList<String>>();
-    private static final ArrayList<ArrayList<String>> warnedList = new ArrayList();
-    static String status = "Offline";
+    private static final ArrayList<ArrayList<String>> vaccinatedList = new ArrayList<>();
+    private static final ArrayList<ArrayList<String>> warnedList = new ArrayList<>();
+    public static MainController controller;
     static Spreadsheet spreadsheet;
-    static String VaccineType;
     static boolean autoMode = false;
     static boolean connected = false;
     static boolean step = false;
@@ -54,21 +50,18 @@ public class AIRAutomation {
     static String vaccineComboBox = "//*/lightning-base-combobox";
     static String searchBox = "/html/body/div[4]/div[2]/div/div/div/div/div[3]/div/div/div[2]/div/div[1]/div[2]/div[2]/force-list-view-manager-search-bar/div/lightning-input/div/input";
     static ArrayList<Integer> waitingTime = new ArrayList<>();
-    static ArrayList<ArrayList<String>> waitHistory = new ArrayList<ArrayList<String>>();
-    static ArrayList<ArrayList<String>> failedList = new ArrayList<ArrayList<String>>();
+    static ArrayList<ArrayList<String>> waitHistory = new ArrayList<>();
+    static ArrayList<ArrayList<String>> failedList = new ArrayList<>();
     static Thread autoLoop;
     private static FileWriter vaccinateOut;
     private static Integer encounterColumnIndex = null;
     private static Integer doseReadyColumnIndex = null;
     private static Integer AIRColumnIndex = null;
     private static Integer vaccinatedColumnIndex = null;
-    private static int numOfColums;
-    public static MainController controller;
-    private static String vaccineType;
+    private static int numOfColumns;
     private static Integer firstNameColumnIndex;
-    private static Integer lastNamecolumnIndex;
+    private static Integer lastNameColumnIndex;
     private static Integer DOBColumnIndex;
-
 
 
     static {
@@ -79,34 +72,27 @@ public class AIRAutomation {
         }
     }
 
-    public AIRAutomation() throws IOException {
+    public AIRAutomation(){
     }
 
+
+    /**
+     *
+     */
     private static void getInitialVaccinations() {
         FileReader vaccinateIn = null;
         try {
             vaccinateIn = new FileReader((str + "ClinicAssistant").replace('/', '-'));
             if (vaccinateIn.read() == -1)
-                loadCurrentVaccintaionsSpreadsheet();
+                loadCurrentVaccinationsSpreadsheet();
             return;
         } catch (FileNotFoundException e) {
-            loadCurrentVaccintaionsSpreadsheet();
+            loadCurrentVaccinationsSpreadsheet();
             return;
         } catch (IOException e) {
             e.printStackTrace();
         }
-        int character = 0;
-        StringBuilder data = new StringBuilder();
-
-        while (true) {
-            try {
-                if (!((character = vaccinateIn.read()) != -1)) break;
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            data.append((char) character);
-        }
-        String vaccinated = data.toString().replace(System.getProperty("line.separator"), "");
+        String vaccinated = fileToString(vaccinateIn).replace(System.getProperty("line.separator"), "");
         String[] vaccinatedData = vaccinated.split("@$");
 
         for (int z = 0; z < (vaccinatedData.length); z = z + 3) {
@@ -114,15 +100,33 @@ public class AIRAutomation {
             for (int c = 0; c < 20; c++)
                 strings.add("");
 
-            strings.set(firstNameColumnIndex, vaccinatedData[1 * z]);
-            System.out.println(vaccinatedData[1 * z]);
-            strings.set(lastNamecolumnIndex, vaccinatedData[2 * z]);
+            strings.set(firstNameColumnIndex, vaccinatedData[z]);
+            System.out.println(vaccinatedData[z]);
+            strings.set(lastNameColumnIndex, vaccinatedData[2 * z]);
             strings.set(DOBColumnIndex, vaccinatedData[3 * z]);
             vaccinatedList.add(strings);
         }
     }
 
-    private static void loadCurrentVaccintaionsSpreadsheet() {
+    static String fileToString(FileReader vaccinateIn) {
+        int character = 0;
+        StringBuilder data = new StringBuilder();
+
+        while (true) {
+            try {
+                if ((character = vaccinateIn.read()) == -1) break;
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            data.append((char) character);
+        }
+        return data.toString();
+    }
+
+    /**
+     *
+     */
+    private static void loadCurrentVaccinationsSpreadsheet() {
         for (ArrayList<String> row : spreadsheet.getCopyRows()) {
             if (row.get(AIRColumnIndex).equals("BOT")) {
                 vaccinatedList.add(row);
@@ -131,52 +135,65 @@ public class AIRAutomation {
         }
     }
 
+    /**
+     * Sets object controller and vaccinetype
+     * @param mainController the main controller
+     */
     public static void configure(MainController mainController) {
         controller = mainController;
-        vaccineType = controller.vaccineSelection.getText();
-
 
 
     }
 
+    /**
+     *
+     */
     public static void stop() {
         autoMode = false;
     }
 
+    /**
+     *
+     */
     public static void start() {
         autoMode = true;
     }
 
+    /**
+     *
+     */
     public static void verifyAll() {
         for (ArrayList<String> patient : GoogleManager.getSpreadsheets().get(0).getCopyRows())
             verify(patient);
     }
 
-    public static void verify(ArrayList<String> columnsOfPatients) {
-
-
-        if (!columnsOfPatients.get(AIRColumnIndex).equals("BOT")) {
+    /**
+     * Verifies if the given patient has the correct initials in the AIR cell
+     * @param patient patient to verify
+     */
+    public static void verify(ArrayList<String> patient) {
+        if (!patient.get(AIRColumnIndex).equals("BOT")) {
             for (ArrayList<String> patientRows : vaccinatedList) {
-                if (isEqual(columnsOfPatients, patientRows)) {
-                    GoogleManager.getSpreadsheets().get(0).editRow(GoogleManager.getSpreadsheets().get(0).getCopyRows().indexOf(columnsOfPatients), AIRColumnIndex, "BOT");
+                if (isEqual(patient, patientRows)) {
+                    GoogleManager.getSpreadsheets().get(0).editRow(GoogleManager.getSpreadsheets().get(0).getCopyRows().indexOf(patient), AIRColumnIndex, "BOT");
                 }
             }
         } else {
             //if equal then
             boolean hasBeenVaccinated = false;
             for (ArrayList<String> patientRows : vaccinatedList) {
-                if (isEqual(columnsOfPatients, patientRows)) {
+                if (isEqual(patient, patientRows)) {
                     hasBeenVaccinated = true;
                     break;
                 }
             }
-            if (!hasBeenVaccinated && (!alreadyWarned(columnsOfPatients))) {
+            if (!hasBeenVaccinated && (!alreadyWarned(patient))) {
                 Color color = new Color();
                 color.setGreen(0f);
                 color.setRed(1f);
                 color.setBlue(0f);
                 ArrayList<Request> requests = new ArrayList<>();
-                requests.add(GoogleWrapper.getRequest(GoogleManager.getSpreadsheets().get(0).getSheetID(), GoogleManager.getSpreadsheets().get(0).getCopyRows().indexOf(columnsOfPatients), AIRColumnIndex, color));
+                requests.add(GoogleWrapper.getRequest(GoogleManager.getSpreadsheets().get(0).getSheetID(), GoogleManager.getSpreadsheets().get(0).getCopyRows().indexOf(patient), AIRColumnIndex, color));
                 try {
                     GoogleWrapper.applyRequests(requests, GoogleManager.getSpreadsheets().get(0).getSpreadsheetID());
                 } catch (IOException e) {
@@ -184,11 +201,11 @@ public class AIRAutomation {
                 }
 
                 System.out.println("#################################################################");
-                warnedList.add(columnsOfPatients);
+                warnedList.add(patient);
 
 
                 System.out.println("This instance has not vaccinated the following Patient");
-                System.out.println(columnsOfPatients.get(firstNameColumnIndex) + " " + columnsOfPatients.get(lastNamecolumnIndex));
+                System.out.println(patient.get(firstNameColumnIndex) + " " + patient.get(lastNameColumnIndex));
                 System.out.println("Please note: If the program was recently restarted bot has lost record of previous AIRs it has done");
                 System.out.println("If you believe this to be the case, then there is no cause for concern.");
 
@@ -196,53 +213,43 @@ public class AIRAutomation {
         }
     }
 
-    private static boolean alreadyWarned(ArrayList<String> columnsOfPatients) {
+    /**
+     * @param patient the patient to check if been warned about
+     * @return true if program has notified of patient
+     */
+    private static boolean alreadyWarned(ArrayList<String> patient) {
         for (ArrayList<String> patientRow : warnedList) {
-            if (isEqual(patientRow, columnsOfPatients))
+            if (isEqual(patientRow, patient))
                 return true;
         }
 
         return false;
     }
 
-    public static void setSpreadsheet(Spreadsheet selectedSpreadsheet) {
-        spreadsheet = selectedSpreadsheet;
-    }
-
+    /**
+     *Sets up the selenium instance through the browser debugger
+     */
     static void connect() {
         ChromeOptions options = new ChromeOptions();
         options.setExperimentalOption("debuggerAddress", "127.0.0.1:9222");
         WebDriver driver = new ChromeDriver(options);
         WebDriverRunner.setWebDriver(driver);
-
-        status = "Starting";
-
         connected = true;
         open("https://vaccines.digitalhealth.gov.au/healthcare-providers/s/patients-list-");
 
     }
 
-    static void autoOn() {
-        autoMode = true;
-        status = "Running";
-
-    }
-
-    static void autoOff() {
-        autoMode = false;
-        status = "Stopped";
-
-    }
-
+    /**
+     *Starts the autoloop
+     */
     static void startLoop() {
         if (autoLoop == null) {
             autoLoop = new Thread(new AutomationLoop());
             autoLoop.start();
-            status = "idle";
         }
 
         spreadsheet = GoogleManager.getSpreadsheets().get(0);
-        Configuration.timeout = 8000;
+        Configuration.timeout = 16000;
 
         encounterColumnIndex = spreadsheet.getColumnIndex(controller.EncounterColumnName.getText());
         doseReadyColumnIndex = spreadsheet.getColumnIndex(controller.DoseReadyColumnName.getText());
@@ -250,16 +257,17 @@ public class AIRAutomation {
         vaccinatedColumnIndex = spreadsheet.getColumnIndex(controller.VaccinatedColumnName.getText());
 
         firstNameColumnIndex = spreadsheet.getColumnIndex(controller.FirstNameColumnName.getText());
-        lastNamecolumnIndex = spreadsheet.getColumnIndex(controller.LastNameColumnName.getText());
+        lastNameColumnIndex = spreadsheet.getColumnIndex(controller.LastNameColumnName.getText());
         DOBColumnIndex = spreadsheet.getColumnIndex(controller.DOBColumnName.getText());
-        numOfColums = spreadsheet.getCopyRows().get(0).size();
+        numOfColumns = spreadsheet.getCopyRows().get(0).size();
     }
 
 
+    /**
+     * Returns the number of patients ready for their AIR to be done
+     * @return number of patients ready for AIR
+     */
     static int getReadyCount() {
-
-
-
         int i = 0;
         for (ArrayList<String> columnsOfPatient : spreadsheet.getCopyRows())
             if (isReady(columnsOfPatient))
@@ -267,7 +275,7 @@ public class AIRAutomation {
 
 
         int finalI = i;
-        Platform.runLater(()-> {
+        Platform.runLater(() -> {
             controller.readyCount.textProperty().set(String.valueOf(finalI));
             controller.failedCount.textProperty().set(String.valueOf(failedList.size()));
             controller.completedCount.textProperty().set(String.valueOf(vaccinatedList.size()));
@@ -277,6 +285,10 @@ public class AIRAutomation {
         return i;
     }
 
+    /**
+     * returns a patient that is ready to have their AIR done
+     * @return returns a patient that is ready
+     */
     static ArrayList<String> getAReadyPatient() {
         //if no patient ready then return null
         for (ArrayList<String> columnsOfPatient : spreadsheet.getCopyRows()) {
@@ -287,64 +299,78 @@ public class AIRAutomation {
         return null;
     }
 
+    /**
+     * if their first name, last name and DOB match, then they are equal
+     * @param person a patient
+     * @param person2 a patient
+     * @return true if equal
+     */
     private static boolean isEqual(ArrayList<String> person, ArrayList<String> person2) {
         return person.get(firstNameColumnIndex).equals(person2.get(firstNameColumnIndex))
-                && person.get(lastNamecolumnIndex).equals(person2.get(lastNamecolumnIndex))
+                && person.get(lastNameColumnIndex).equals(person2.get(lastNameColumnIndex))
                 && person.get(DOBColumnIndex).equals(person2.get(DOBColumnIndex));
     }
 
-    private static boolean isReady(ArrayList<String> columnsOfPatient) {
-        if (columnsOfPatient.size() != numOfColums)
+    /**
+     * Checks if a patient is ready to get their AIR done
+     * @param patient a patient to check if ready
+     * @return true if ready for AIR
+     */
+    private static boolean isReady(ArrayList<String> patient) {
+        if (patient.size() != numOfColumns)
             return false;
 
         //if failed then ignore
         for (int i = 0; i < failedList.size(); i++)
-            if (isEqual(columnsOfPatient, failedList.get(i)))
+            if (isEqual(patient, failedList.get(i)))
                 return false;
 
         //if vaccinated then ignore
         for (int i = 0; i < vaccinatedList.size(); i++)
-            if (isEqual(columnsOfPatient, vaccinatedList.get(i)))
+            if (isEqual(patient, vaccinatedList.get(i)))
                 return false;
 
         for (int i = 0; i < waitHistory.size(); i++)
-            if (isEqual(columnsOfPatient, waitHistory.get(i)))
-                if (waitingTime.get(0) < Calendar.getInstance().get(Calendar.HOUR_OF_DAY) * 60 + Calendar.getInstance().get(Calendar.MINUTE))
+            if (isEqual(patient, waitHistory.get(i)))
+                if (waitingTime.get(i) > Calendar.getInstance().get(Calendar.HOUR_OF_DAY) * 60 + Calendar.getInstance().get(Calendar.MINUTE))
                     return false;
 
         //if not eligible to get AIR then ignore
-        if (columnsOfPatient.get(encounterColumnIndex).equals("") || columnsOfPatient.get(encounterColumnIndex).toLowerCase(Locale.ROOT).equals("x"))
+        if (patient.get(encounterColumnIndex).equals("") || patient.get(encounterColumnIndex).toLowerCase(Locale.ROOT).equals("x"))
             return false;
 
-        if (columnsOfPatient.get(vaccinatedColumnIndex).equals("") || columnsOfPatient.get(vaccinatedColumnIndex).toLowerCase(Locale.ROOT).equals("x"))
+        if (patient.get(vaccinatedColumnIndex).equals("") || patient.get(vaccinatedColumnIndex).toLowerCase(Locale.ROOT).equals("x"))
             return false;
 
-        if (columnsOfPatient.get(doseReadyColumnIndex).equals("") || columnsOfPatient.get(doseReadyColumnIndex).toLowerCase(Locale.ROOT).equals("x"))
+        if (patient.get(doseReadyColumnIndex).equals("") || patient.get(doseReadyColumnIndex).toLowerCase(Locale.ROOT).equals("x"))
             return false;
 
-        return (columnsOfPatient.get(AIRColumnIndex).equals("") || columnsOfPatient.get(AIRColumnIndex) == null);
+        return (patient.get(AIRColumnIndex).equals("") || patient.get(AIRColumnIndex) == null);
 
     }
 
+    /**
+     *Steps the bot one patient at a time
+     */
     static void stepBot() {
         step = true;
     }
 
+    /**
+     *Does a patients AIR
+     */
     static void doPatient() {
         try {
-
-
-
             //get next available row to vaccinate
-            ArrayList<String> vacinatee = getAReadyPatient();
+            ArrayList<String> selectedPatient = getAReadyPatient();
 
             Platform.runLater(() -> {
                 controller.botStatus.textProperty().set("AIR-ing.");
-                for (Object patient :  controller.table.getItems()){
+                for (Object patient : controller.table.getItems()) {
                     Patient temp = (Patient) patient;
-                    if (temp.getFirstName().equals(vacinatee.get(firstNameColumnIndex)))
-                        if (temp.getLastName().equals(vacinatee.get(lastNamecolumnIndex)))
-                            if (temp.getDOB().equals(vacinatee.get(DOBColumnIndex)))
+                    if (temp.getFirstName().equals(selectedPatient.get(firstNameColumnIndex)))
+                        if (temp.getLastName().equals(selectedPatient.get(lastNameColumnIndex)))
+                            if (temp.getDOB().equals(selectedPatient.get(DOBColumnIndex)))
                                 controller.table.getSelectionModel().select(patient);
 
                 }
@@ -357,54 +383,51 @@ public class AIRAutomation {
             color.setGreen(.85f);
             color.setBlue(.90f);
 
-            requests.add(GoogleWrapper.getRequest(GoogleManager.getSpreadsheets().get(0).getSheetID(), GoogleManager.getSpreadsheets().get(0).getCopyRows().indexOf(vacinatee), AIRColumnIndex, color));
+            requests.add(GoogleWrapper.getRequest(GoogleManager.getSpreadsheets().get(0).getSheetID(), GoogleManager.getSpreadsheets().get(0).getCopyRows().indexOf(selectedPatient), AIRColumnIndex, color));
             GoogleWrapper.applyRequests(requests, GoogleManager.getSpreadsheets().get(0).getSpreadsheetID());
 
 
             open("https://vaccines.digitalhealth.gov.au/healthcare-providers/s/patients-list-");
-            String firstName = vacinatee.get(firstNameColumnIndex).toLowerCase(Locale.ROOT);
-            String lastName = vacinatee.get(lastNamecolumnIndex).toLowerCase(Locale.ROOT);
-            int dose = Integer.parseInt(vacinatee.get(doseReadyColumnIndex));
-//vaccinate(firstName, lastName, dose)
+            String firstName = selectedPatient.get(firstNameColumnIndex).toLowerCase(Locale.ROOT);
+            String lastName = selectedPatient.get(lastNameColumnIndex).toLowerCase(Locale.ROOT);
+            int dose = Integer.parseInt(selectedPatient.get(doseReadyColumnIndex));
             if (vaccinate(firstName, lastName, dose)) {
                 color.setRed(0f);
                 color.setGreen(1f);
                 color.setBlue(0f);
-                requests.add(GoogleWrapper.getRequest(GoogleManager.getSpreadsheets().get(0).getSheetID(), GoogleManager.getSpreadsheets().get(0).getCopyRows().indexOf(vacinatee), AIRColumnIndex, color));
+                requests.add(GoogleWrapper.getRequest(GoogleManager.getSpreadsheets().get(0).getSheetID(), GoogleManager.getSpreadsheets().get(0).getCopyRows().indexOf(selectedPatient), AIRColumnIndex, color));
                 GoogleWrapper.applyRequests(requests, GoogleManager.getSpreadsheets().get(0).getSpreadsheetID());
-                //dataHandler.setCell("AIR", "BOT", ColorProperty.getAsGreen().getGoogleColor(), vacinatee);
-                spreadsheet.editRow(spreadsheet.getCopyRows().indexOf(vacinatee), AIRColumnIndex, "BOT");
-                vaccinatedList.add(vacinatee);
-                vaccinateOut.write(firstName + "@$" + lastName + "@$" + vacinatee.get(DOBColumnIndex));
+                //dataHandler.setCell("AIR", "BOT", ColorProperty.getAsGreen().getGoogleColor(), selectedPatient);
+                spreadsheet.editRow(spreadsheet.getCopyRows().indexOf(selectedPatient), AIRColumnIndex, "BOT");
+                vaccinatedList.add(selectedPatient);
+                vaccinateOut.write(firstName + "@$" + lastName + "@$" + selectedPatient.get(DOBColumnIndex));
                 vaccinateOut.flush();
-            } else {
-                //make yellow and add to waiting list
-                if (!isWainting(vacinatee)) {
+            } else if (!isWaiting(selectedPatient)) {
                     color.setRed(1f);
                     color.setGreen(1f);
                     color.setBlue(0f);
 
-                    requests.add(GoogleWrapper.getRequest(GoogleManager.getSpreadsheets().get(0).getSheetID(), GoogleManager.getSpreadsheets().get(0).getCopyRows().indexOf(vacinatee), AIRColumnIndex, color));
+                    requests.add(GoogleWrapper.getRequest(GoogleManager.getSpreadsheets().get(0).getSheetID(), GoogleManager.getSpreadsheets().get(0).getCopyRows().indexOf(selectedPatient), AIRColumnIndex, color));
                     GoogleWrapper.applyRequests(requests, GoogleManager.getSpreadsheets().get(0).getSpreadsheetID());
-                    waitHistory.add(vacinatee);
+                    waitHistory.add(selectedPatient);
                     int currentTime = Calendar.getInstance().get(Calendar.HOUR_OF_DAY) * 60 + Calendar.getInstance().get(Calendar.MINUTE);
                     waitingTime.add(currentTime + waitTimeInMinutes);
                     //make Patient yellow
-                    //dataHandler.setCell("AIR", ColorProperty.getAsYellow().getGoogleColor(), vacinatee);
+                    //dataHandler.setCell("AIR", ColorProperty.getAsYellow().getGoogleColor(), selectedPatient);
 
                 } else {
                     color.setRed(1f);
-                    color.setGreen(165f/256f);
+                    color.setGreen(165f / 256f);
                     color.setBlue(0f);
-                    requests.add(GoogleWrapper.getRequest(GoogleManager.getSpreadsheets().get(0).getSheetID(), GoogleManager.getSpreadsheets().get(0).getCopyRows().indexOf(vacinatee), AIRColumnIndex, color));
+                    requests.add(GoogleWrapper.getRequest(GoogleManager.getSpreadsheets().get(0).getSheetID(), GoogleManager.getSpreadsheets().get(0).getCopyRows().indexOf(selectedPatient), AIRColumnIndex, color));
                     GoogleWrapper.applyRequests(requests, GoogleManager.getSpreadsheets().get(0).getSpreadsheetID());
 
-                    failedList.add(vacinatee);
-                    //dataHandler.setCell("AIR", ColorProperty.getAsOrange().getGoogleColor(), vacinatee);
+                    failedList.add(selectedPatient);
+                    //dataHandler.setCell("AIR", ColorProperty.getAsOrange().getGoogleColor(), selectedPatient);
 
 
                 }
-            }
+
         } catch (Exception a) {
             a.printStackTrace();
             System.out.println(a.getCause());
@@ -413,15 +436,30 @@ public class AIRAutomation {
         }
     }
 
-    private static boolean isWainting(ArrayList<String> vacinatee) {
-        for (ArrayList<String> patient : spreadsheet.getCopyRows())
-            if (isEqual(vacinatee, patient))
+    /**
+     * checks if a patient is waiting
+     * @param selectedPatient patient to check
+     * @return true if they are waiting
+     */
+    private static boolean isWaiting(ArrayList<String> selectedPatient) {
+        for (ArrayList<String> patient : waitHistory)
+            if (isEqual(selectedPatient, patient))
                 return true;
 
         return false;
     }
 
+    /**
+     * @param firstName
+     * @param lastName
+     * @param dose
+     * @return
+     */
     static boolean vaccinate(String firstName, String lastName, int dose) {
+        if (firstName.contains("'") || lastName.contains("'"))
+            return false;
+
+
         //spreadsheet.setCell("AIR", new ColorProperty(.68f,.85f,.90f).getGoogleColor(), patient);
         boolean found = search(firstName, lastName);
         if (!found) {
@@ -431,6 +469,11 @@ public class AIRAutomation {
         return vaccinated;
     }
 
+    /**
+     * @param firstName
+     * @param lastName
+     * @return
+     */
     private static boolean search(String firstName, String lastName) {
 
         if (hasNotLoadedPatientList())
@@ -445,12 +488,16 @@ public class AIRAutomation {
             return false;
 
         //PATIENT LINK FOR AIR
-        String link = $(byXpath("//*[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '" + firstName + "') and contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '" + lastName + "')]")).getAttribute("href");
+        String link = $(byXpath("//a[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '" + firstName + "') and contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '" + lastName + "')]")).getAttribute("href");
         open(link);
 
         return true;
     }
 
+    /**
+     * @param dose
+     * @return
+     */
     private static boolean apply(int dose) {
         //WAIT FOR VACCINATE TAB TO SHOW
         try {
@@ -476,20 +523,18 @@ public class AIRAutomation {
         }
 
         //CLICK VACCINE COMBOBOX
+        new JavaScript(executeJavaScript("window.scrollTo(0, document.body.scrollHeight)"));
+
         $(byXpath(vaccineComboBox)).click();
 
 
         //SET VACCINE
-        if (vaccineType.equals("Astrazen")) {
-            //select astrazeneca
+        if (controller.vaccineSelection.getText().toLowerCase(Locale.ROOT).contains("as")) {
+            //select Astrazeneca
             $(byXpath(astrazenVaccine)).click();
-
-        } else if (vaccineType.equals("Pfizer")) {
+        } else{
             //select pfizer
             $(byXpath(pfizerVaccine)).click();
-
-        } else {
-            return false;
         }
 
         //SET DOSE
@@ -505,7 +550,6 @@ public class AIRAutomation {
         }
 
         //NEXT BUTTON
-        new JavaScript(executeJavaScript("window.scrollTo(0, document.body.scrollHeight)"));
         $(byXpath(nextButton)).click();
 
 
@@ -522,11 +566,11 @@ public class AIRAutomation {
             });
             return false;
         }
-        if (vaccineType.equals("Astrazen"))
+        if (controller.vaccineSelection.getText().toLowerCase(Locale.ROOT).contains("az"))
             if ($(byXpath("//*[contains(text(),'Pfizer')]")).exists())
                 return false;
 
-        if (vaccineType.equals("Pfizer"))
+        if (controller.vaccineSelection.getText().toLowerCase(Locale.ROOT).contains("pf"))
             if ($(byXpath("//*[contains(text(),'Astrazen')]")).exists())
                 return false;
 
@@ -537,6 +581,9 @@ public class AIRAutomation {
 
     }
 
+    /**
+     * @return
+     */
     private static boolean createRecord() {
         boolean createRecordButtonPresent = $(byXpath("/html/body/div[4]/div[2]/div/div[2]/div/div[1]/div/div/ul/li[3]/a")).exists();
         if (!createRecordButtonPresent) {
@@ -546,6 +593,11 @@ public class AIRAutomation {
         return true;
     }
 
+    /**
+     * @param firstName
+     * @param lastName
+     * @return
+     */
     private static boolean isPatientFound(String firstName, String lastName) {
         try {
             $(byXpath("//*[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '" + firstName + "') and contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '" + lastName + "')]")).should(exist);
@@ -555,6 +607,9 @@ public class AIRAutomation {
         return true;
     }
 
+    /**
+     * @return
+     */
     private static boolean hasNotLoadedPatientList() {
         try {
             $(byXpath(patientListLoadChecker)).should(exist);
@@ -572,10 +627,10 @@ public class AIRAutomation {
         return false;
     }
 
-    static void getWaitingAndFailed() {
-        //load from json file
-    }
 
+    /**
+     *
+     */
     static class AutomationLoop implements Runnable {
 
         private final ArrayList<ArrayList<Object>> readyList = new ArrayList<>();
@@ -583,18 +638,18 @@ public class AIRAutomation {
         @Override
         public void run() throws com.codeborne.selenide.ex.ElementNotFound {
             connect();
-            while (spreadsheet.getCopyRows().size() == 0) {
+            while (!Thread.currentThread().isInterrupted() && spreadsheet.getCopyRows().size() == 0) {
                 try {
                     Thread.sleep(500);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    return;
                 }
             }
 
 
             getInitialVaccinations();
 
-            while (true) {
+            while (!Thread.currentThread().isInterrupted()) {
 
 
                 verifyAll();
@@ -606,7 +661,7 @@ public class AIRAutomation {
                 try {
                     Thread.sleep(500);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    break;
                 }
             }
         }

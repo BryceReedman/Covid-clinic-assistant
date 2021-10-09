@@ -22,11 +22,11 @@
            <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Bot Status: " />
            <Label fx:id="botStatus" prefHeight="18.0" prefWidth="45.0" text="Offline" />
            <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Completed: " />
-           <Label fx:id="completedCount" prefHeight="18.0" prefWidth="15.0" text="0" />
+           <Label fx:id="completedCount" prefHeight="18.0" prefWidth="25.0" text="000" />
            <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Failed: " />
-           <Label fx:id="failedCount" prefHeight="18.0" prefWidth="15.0" text="0" />
+           <Label fx:id="failedCount" prefHeight="18.0" prefWidth="22.0" text="000" />
          <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Ready" />
-         <Label fx:id="readyCount" prefHeight="18.0" prefWidth="15.0" text="0" />
+         <Label fx:id="readyCount" prefHeight="18.0" prefWidth="22.0" text="000" />
        </ToolBar>
    </top>
    <center>

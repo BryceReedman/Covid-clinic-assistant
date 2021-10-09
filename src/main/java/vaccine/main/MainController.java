@@ -60,87 +60,10 @@ public class MainController implements Initializable {
             return;
 
 
-            listThread.interrupt();
+        listThread.interrupt();
 
     }
 
-    class list implements Runnable{
-
-        @Override
-        public void run() {
-
-            while(GoogleManager.getSpreadsheets().get(0).getRows().size() == 0){
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                    break;
-                }
-            }
-
-            int encounterColumnIndex = GoogleManager.getSpreadsheets().get(0).getColumnIndex(EncounterColumnName.getText());
-            int doseReadyColumnIndex = GoogleManager.getSpreadsheets().get(0).getColumnIndex(DoseReadyColumnName.getText());
-            int AIRColumnIndex = GoogleManager.getSpreadsheets().get(0).getColumnIndex(AIRColumnName.getText());
-            int vaccinatedColumnIndex = GoogleManager.getSpreadsheets().get(0).getColumnIndex(VaccinatedColumnName.getText());
-
-            int firstNameColumnIndex = GoogleManager.getSpreadsheets().get(0).getColumnIndex(FirstNameColumnName.getText());
-            int lastNamecolumnIndex = GoogleManager.getSpreadsheets().get(0).getColumnIndex(LastNameColumnName.getText());
-            int DOBColumnIndex = GoogleManager.getSpreadsheets().get(0).getColumnIndex(DOBColumnName.getText());
-
-
-
-
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                return;
-            }
-
-                while (true) {
-
-                    if (Thread.currentThread().isInterrupted()) {
-                        break;
-                    }
-
-                    ArrayList<ArrayList<String>> rows = GoogleManager.getSpreadsheets().get(0).getCopyRows();
-                    if (rows.size() == 0)
-                        return;
-
-                    while (table.getItems().size() < rows.size()) {
-                        table.getItems().add(new Patient());
-                    }
-                    while (patients.size() > rows.size()) {
-                        table.getItems().remove(table.getItems().size() - 1);
-                    }
-                    for (int i = 0; i < table.getItems().size(); i++) {
-
-
-                        Patient patient = (Patient) table.getItems().get(i);
-                        patient.setFirstName(rows.get(i).get(firstNameColumnIndex));
-                        patient.setLastName(rows.get(i).get(lastNamecolumnIndex));
-                        patient.setDOB(rows.get(i).get(DOBColumnIndex));
-                        patient.setEnc(rows.get(i).get(encounterColumnIndex));
-                        patient.setDose(rows.get(i).get(doseReadyColumnIndex));
-                        patient.setVaccinate(rows.get(i).get(vaccinatedColumnIndex));
-                        patient.setAIR(rows.get(i).get(AIRColumnIndex));
-                    }
-                    try {
-                        Thread.sleep(500);
-                    } catch (InterruptedException ex) {
-                        ex.printStackTrace();
-                        break;
-                    }
-                }
-
-
-
-
-
-
-
-        }
-    }
     public void rangeSet(ActionEvent actionEvent) {
     }
 
@@ -190,22 +113,11 @@ public class MainController implements Initializable {
         FileReader settings;
         try {
             settings = new FileReader("settings");
-        } catch (FileNotFoundException e){
+        } catch (FileNotFoundException e) {
             return;
         }
 
-        int character = 0;
-        StringBuilder data = new StringBuilder();
-
-        while (true) {
-            try {
-                if ((character = settings.read()) == -1) break;
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            data.append((char) character);
-        }
-        String[] lines = data.toString().split(System.lineSeparator());
+        String[] lines = AIRAutomation.fileToString(settings).split(System.lineSeparator());
 
         rangeTextField.setText(lines[0].split("@")[1]);
         VaccinatedColumnName.setText(lines[1].split("@")[1]);
@@ -220,20 +132,20 @@ public class MainController implements Initializable {
     public void saveSettings() throws IOException {
         FileWriter settings = new FileWriter("settings");
         settings.write("range:@" + rangeTextField.getText() + System.lineSeparator());
-        settings.write("vaccinate:@"+ VaccinatedColumnName.getText() + System.lineSeparator());
-        settings.write("dose_ready:@"+ DoseReadyColumnName.getText() + System.lineSeparator());
-        settings.write("encounter:@"+ EncounterColumnName.getText() + System.lineSeparator());
-        settings.write("air:@"+ AIRColumnName.getText() + System.lineSeparator());
-        settings.write("dob:@"+ DOBColumnName.getText() + System.lineSeparator());
-        settings.write("firstname:@"+ FirstNameColumnName.getText() + System.lineSeparator());
-        settings.write("lastname:@"+ LastNameColumnName.getText() + System.lineSeparator());
+        settings.write("vaccinate:@" + VaccinatedColumnName.getText() + System.lineSeparator());
+        settings.write("dose_ready:@" + DoseReadyColumnName.getText() + System.lineSeparator());
+        settings.write("encounter:@" + EncounterColumnName.getText() + System.lineSeparator());
+        settings.write("air:@" + AIRColumnName.getText() + System.lineSeparator());
+        settings.write("dob:@" + DOBColumnName.getText() + System.lineSeparator());
+        settings.write("firstname:@" + FirstNameColumnName.getText() + System.lineSeparator());
+        settings.write("lastname:@" + LastNameColumnName.getText() + System.lineSeparator());
         settings.close();
 
     }
 
-
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        disableApplyButtons();
         try {
             loadSavedSettings();
         } catch (FileNotFoundException e) {
@@ -279,7 +191,7 @@ public class MainController implements Initializable {
         VaccCol.setCellValueFactory(new PropertyValueFactory<Patient, String>("vaccinate"));
 
         AIRCol.setCellValueFactory(new PropertyValueFactory<Patient, String>("AIR"));
-        
+
 
         table.itemsProperty().set(patients);
         AIRAutomation.configure(this);
@@ -287,8 +199,8 @@ public class MainController implements Initializable {
 
     @FXML
     private void enableCheck() {
-        if (sheetSelection.getSelectionModel().getSelectedItem() != null
-                && spreadsheetSelection.getSelectionModel().getSelectedItem() != null
+        if (!sheetSelection.getSelectionModel().isEmpty()
+                && !spreadsheetSelection.getSelectionModel().isEmpty()
                 && !(rangeTextField.getText().isEmpty() || rangeTextField.getText().equals(""))
                 && EncounterColumnName.getText() != null
                 && VaccinatedColumnName.getText() != null
@@ -321,7 +233,6 @@ public class MainController implements Initializable {
         GoogleManager.getSpreadsheets().get(0).setSpreadSheetID(GoogleWrapper.getID((String) spreadsheetSelection.getSelectionModel().getSelectedItem()));
         GoogleManager.getSpreadsheets().get(0).setsheetID(GoogleWrapper.getSheetID(sheetSelection.getSelectionModel().getSelectedItem().toString(), GoogleWrapper.getID((String) spreadsheetSelection.getSelectionModel().getSelectedItem())));
 
-        enableBotControls();
         disableApplyButtons();
         disableEntryFields();
 
@@ -329,13 +240,13 @@ public class MainController implements Initializable {
         if (((String) sheetSelection.getSelectionModel().getSelectedItem()).toLowerCase(Locale.ROOT).contains("az"))
             vaccineSelection.textProperty().set("Astrazen");
 
-        else if (((String) sheetSelection.getSelectionModel().getSelectedItem()).toLowerCase().contains("pfizer"))
+        else if (((String) sheetSelection.getSelectionModel().getSelectedItem()).toLowerCase().contains("pf"))
             vaccineSelection.textProperty().set("Pfizer");
 
         else throw new NullPointerException("VACCINE NOT SPECIFIED IN SPREADSHEET");
 
-    listThread = new Thread(new list());
-    listThread.start();
+        listThread = new Thread(new list());
+        listThread.start();
     }
 
     private void disableEntryFields() {
@@ -355,5 +266,78 @@ public class MainController implements Initializable {
     private void enableBotControls() {
         botConnectButton.setDisable(false);
 
+    }
+
+    class list implements Runnable {
+
+        @Override
+        public void run() {
+
+            while (GoogleManager.getSpreadsheets().get(0).getRows().size() == 0) {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    break;
+                }
+            }
+
+            enableBotControls();
+
+            int encounterColumnIndex = GoogleManager.getSpreadsheets().get(0).getColumnIndex(EncounterColumnName.getText());
+            int doseReadyColumnIndex = GoogleManager.getSpreadsheets().get(0).getColumnIndex(DoseReadyColumnName.getText());
+            int AIRColumnIndex = GoogleManager.getSpreadsheets().get(0).getColumnIndex(AIRColumnName.getText());
+            int vaccinatedColumnIndex = GoogleManager.getSpreadsheets().get(0).getColumnIndex(VaccinatedColumnName.getText());
+
+            int firstNameColumnIndex = GoogleManager.getSpreadsheets().get(0).getColumnIndex(FirstNameColumnName.getText());
+            int lastNamecolumnIndex = GoogleManager.getSpreadsheets().get(0).getColumnIndex(LastNameColumnName.getText());
+            int DOBColumnIndex = GoogleManager.getSpreadsheets().get(0).getColumnIndex(DOBColumnName.getText());
+
+
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+                return;
+            }
+
+            while (true) {
+
+                if (Thread.currentThread().isInterrupted()) {
+                    break;
+                }
+
+                ArrayList<ArrayList<String>> rows = GoogleManager.getSpreadsheets().get(0).getCopyRows();
+                if (rows.size() == 0)
+                    return;
+
+                while (table.getItems().size() < rows.size()) {
+                    table.getItems().add(new Patient());
+                }
+                while (patients.size() > rows.size()) {
+                    table.getItems().remove(table.getItems().size() - 1);
+                }
+                for (int i = 0; i < table.getItems().size(); i++) {
+
+
+                    Patient patient = (Patient) table.getItems().get(i);
+                    patient.setFirstName(rows.get(i).get(firstNameColumnIndex));
+                    patient.setLastName(rows.get(i).get(lastNamecolumnIndex));
+                    patient.setDOB(rows.get(i).get(DOBColumnIndex));
+                    patient.setEnc(rows.get(i).get(encounterColumnIndex));
+                    patient.setDose(rows.get(i).get(doseReadyColumnIndex));
+                    patient.setVaccinate(rows.get(i).get(vaccinatedColumnIndex));
+                    patient.setAIR(rows.get(i).get(AIRColumnIndex));
+                }
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException ex) {
+                    ex.printStackTrace();
+                    break;
+                }
+            }
+
+
+        }
     }
 }

@@ -11,11 +11,6 @@ import java.util.Dictionary;
 
 public class GoogleManager {
     private static final ArrayList<Spreadsheet> spreadsheets = new ArrayList<>();
-    public static boolean updateActive = false;
-
-
-
-
     private static Thread updaterThread;
     private static Thread initializeThread;
 
@@ -66,15 +61,15 @@ public class GoogleManager {
         ArrayList<ArrayList<String>> rows = new ArrayList<>();
 
         ArrayList<String> columnNames = new ArrayList<>();
-
         for (JsonElement row : rawData) {
-            JsonArray columns = row.getAsJsonObject().get("values").getAsJsonArray();
+                JsonArray columns = row.getAsJsonObject().get("values").getAsJsonArray();
 
-            ArrayList<String> content = new ArrayList<>();
-            for (JsonElement value : columns) {
-                content.add(getStringValue(value.getAsJsonObject()));
-            }
-            rows.add(content);
+                ArrayList<String> content = new ArrayList<>();
+                for (JsonElement value : columns) {
+                    content.add(getStringValue(value.getAsJsonObject()));
+                }
+                rows.add(content);
+
         }
 
         ArrayList<ArrayList<String>> savedList = new ArrayList<>();
@@ -135,12 +130,10 @@ public class GoogleManager {
     }
 
     public static void closeThreads() {
-        if (updaterThread == null)
-            return;
-
+        if (updaterThread != null)
         updaterThread.interrupt();
-        if (initializeThread == null)
-            return;
+
+        if (initializeThread != null)
         initializeThread.interrupt();
     }
 
@@ -150,16 +143,13 @@ public class GoogleManager {
         @Override
         public void run() {
 
-            while (true) {
-                if (Thread.currentThread().isInterrupted()) {
-                    break;
-                }
+            while (!Thread.currentThread().isInterrupted()) {
+
 
 
                 try {
                     Thread.sleep(200);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
                     break;
                 }
                 if (!spreadsheets.isEmpty()) {
@@ -167,8 +157,7 @@ public class GoogleManager {
                         try {
                             Thread.sleep(2000);
                         } catch (InterruptedException e) {
-                            e.printStackTrace();
-                            break;
+                            return;
                         }
 
                         try {
@@ -192,15 +181,12 @@ public class GoogleManager {
         public void run() {
             //initialize code
 
-            while (!allSpreadsheetsReady()) {
+            while (!allSpreadsheetsReady() && !Thread.currentThread().isInterrupted()) {
                 try {
-                    if (Thread.currentThread().isInterrupted()) {
-                        break;
-                    }
+
                     Thread.sleep(200);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
-                    break;
+                    return;
                 }
             }
 

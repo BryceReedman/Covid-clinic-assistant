@@ -17,7 +17,6 @@ public class Spreadsheet {
     private boolean update = false;
 
     public Spreadsheet() {
-
     }
 
 
@@ -26,20 +25,16 @@ public class Spreadsheet {
         this.sheetID = sheetID;
         this.range = range;
         this.sheetName = range.split("!")[0];
-
-
     }
 
     public synchronized ArrayList<ArrayList<String>> getRows() {
         synchronized (lock) {
-
             return rows;
         }
     }
 
     public void setRows(ArrayList<ArrayList<String>> rows) {
         synchronized (lock) {
-
             this.rows = rows;
         }
     }
@@ -48,7 +43,6 @@ public class Spreadsheet {
         synchronized (lock) {
             if (!editedRowIndexes.contains(rowIndex))
                 editedRowIndexes.add(rowIndex);
-
             update = true;
             //set rows
             rows.get(rowIndex).set(columnIndex, content);
@@ -112,7 +106,6 @@ public class Spreadsheet {
     public void setSheetName(String text) {
         this.sheetName = text;
         checkIsReady();
-
     }
 
     public Integer getColumnIndex(String text) {
@@ -120,7 +113,6 @@ public class Spreadsheet {
             if (rows.get(0).get(i).equals(text)) {
                 return i;
             }
-
         }
         return null;
     }
@@ -173,7 +165,6 @@ public class Spreadsheet {
                 }
                 copyOfRows.add(contentCopy);
             }
-
             return copyOfRows;
         }
     }
